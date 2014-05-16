@@ -5,7 +5,7 @@ A WebSocket shim for WebView on older Androids
 
 Example
 =======
-
+```java
 public class MainActivity extends Activity {
 
     private WebView mWebView;
@@ -18,5 +18,5 @@ public class MainActivity extends Activity {
         WebSocketShim.apply(mWebView);
     }
 }
-
+```
 
