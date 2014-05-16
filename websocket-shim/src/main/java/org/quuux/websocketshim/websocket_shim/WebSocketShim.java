@@ -42,13 +42,13 @@ public class WebSocketShim {
     }
 
     private static String sandbox(final String script) {
-        return String.format("javascript:(function() { %s })();", script);
+        return String.format("javascript: (function() { %s })();", script.replace("\n", ""));
     }
 
     private static void eval(final WebView view, final String script) {
         if (view != null) {
             final String sandboxedScript = sandbox(script);
-            log("eval(%s", sandboxedScript);
+            log(sandboxedScript);
             view.loadUrl(sandboxedScript);
         }
     }
@@ -179,6 +179,9 @@ public class WebSocketShim {
 
     public static void apply(final WebView view) {
 
+        final WebSocketShim shim = new WebSocketShim(view);
+        view.addJavascriptInterface(shim.getInterface(), "WebSocketInterface");
+
         final String library = loadLibrary(view.getContext());
         if (library == null) {
             log("error loading library");
@@ -187,8 +190,6 @@ public class WebSocketShim {
 
         eval(view, library);
 
-        final WebSocketShim shim = new WebSocketShim(view);
-        view.addJavascriptInterface(shim.getInterface(), "WebSocketInterface");
     }
 
 }

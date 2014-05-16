@@ -6,36 +6,6 @@ var log = function() {
     }
 };
 
-//if (!window.WebSocketInterface) {
-//
-//    var WebSocketInterfaceMock = {
-//        newSocket: function() {
-//            var count = WebSocketInterface.sockets.length;
-//            log("mocking new socket -> " + count);
-//            WebSocketInterfaceMock.sockets[count] = null;
-//
-//        },
-//
-//        connect: function(socket, url) {
-//            log("mock connect socket -> " + socket + " : " + url);
-//            WebSocketInterfaceMock.sockets[socket] = new WebSocket(url);
-//        },
-//
-//        close: function(socket) {
-//            WebSocketInterfaceMock.sockets[socket].close();
-//        },
-//
-//        send: function(socket, data) {
-//            WebSocketInterfaceMock.sockets[socket].send(data);
-//        }
-//
-//    };
-//
-//    WebSocketInterfaceMock.sockets = {};
-//
-//    window.WebSocketInterface = WebSocketInterfaceMock;
-//}
-
 var CloseEvent = function(code, reason, wasClean) {
     this.code = code;
     this.reason = reason;
