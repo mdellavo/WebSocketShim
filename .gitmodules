@@ -1,0 +1,3 @@
+[submodule "vendor/AutobahnAndroid"]
+	path = vendor/AutobahnAndroid
+	url = https://github.com/tavendo/AutobahnAndroid.git
