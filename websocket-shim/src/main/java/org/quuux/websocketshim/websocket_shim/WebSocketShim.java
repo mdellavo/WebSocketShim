@@ -47,7 +47,9 @@ public class WebSocketShim {
 
     private static void eval(final WebView view, final String script) {
         if (view != null) {
-            view.loadUrl(sandbox(script));
+            final String sandboxedScript = sandbox(script);
+            log("eval(%s", sandboxedScript);
+            view.loadUrl(sandboxedScript);
         }
     }
 
@@ -168,7 +170,7 @@ public class WebSocketShim {
                 sb.append(new String(buffer, 0, count));
             }
 
-            return sandbox(sb.toString());
+            return sb.toString();
         } catch (final IOException e) {
             logException("error loading shim library", e);
         }
