@@ -98,3 +98,32 @@ window.WebSocketShim = WebSocketShim;
 if (!window.WebSocket) {
     window.WebSocket = WebSocketShim;
 }
+
+function test() {
+    var timer;
+    var sock = new WebSocketShim("ws://echo.websocket.org");
+
+    function ping() {
+        sock.send("ping!");
+    }
+
+    sock.onopen = function(e) {
+        log("onopen -> " + e);
+        timer = window.setInterval(ping, 5 * 1000);
+    };
+
+    sock.onclose = function(e) {
+        log("onclose -> " + e);
+        if (timer)
+            window.clearInterval(timer);
+    };
+
+    sock.onmessage = function(e) {
+        log("onmessage -> " + e);
+    };
+
+
+
+}
+
+test();
