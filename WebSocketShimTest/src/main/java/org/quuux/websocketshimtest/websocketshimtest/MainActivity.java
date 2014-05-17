@@ -30,6 +30,7 @@ public class MainActivity extends Activity {
         mWebView.setWebChromeClient(new TestWebChromeClient());
         WebSocketShim.apply(mWebView);
         setContentView(mWebView);
+        mWebView.loadUrl("http://www.websocket.org/echo.html");
     }
 
     class TestWebView extends WebView {

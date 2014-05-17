@@ -6,6 +6,10 @@ var log = function() {
     }
 };
 
+var MessageEvent = function(data) {
+    this.data = data;
+};
+
 var CloseEvent = function(code, reason, wasClean) {
     this.code = code;
     this.reason = reason;
@@ -15,6 +19,7 @@ var CloseEvent = function(code, reason, wasClean) {
 var WebSocketShim = function(url) {
     this.URL = url;
     this.socket = WebSocketInterface.newSocket();
+    this.readyState = WebSocketShim.CONNECTING;
     log("new socket -> " + this.socket);
     if (this.socket > -1) {
         WebSocketShim.sockets[this.socket] = this;
@@ -24,6 +29,7 @@ var WebSocketShim = function(url) {
 };
 
 WebSocketShim.prototype.close = function() {
+    this.readyState = WebSocketShim.CLOSING;
     WebSocketInterface.close(this.socket);
 };
 
@@ -45,6 +51,7 @@ WebSocketShim.getSocket = function (socket) {
 WebSocketShim.onOpen = function(socket, uri) {
     var socket = WebSocketShim.getSocket(socket);
     if (socket && socket.onopen) {
+        socket.readyState = WebSocketShim.OPEN;
         socket.onopen();
     }
 };
@@ -52,13 +59,14 @@ WebSocketShim.onOpen = function(socket, uri) {
 WebSocketShim.onMessage = function(socket, data) {
     var socket = WebSocketShim.getSocket(socket);
     if (socket && socket.onmessage) {
-        socket.onmessage(data);
+        socket.onmessage(new MessageEvent(data));
     }
 };
 
 WebSocketShim.onClose = function(socket, code, reason, wasClean) {
     var socket = WebSocketShim.getSocket(socket);
     if (socket && socket.onclose) {
+        socket.readyState = WebSocketShim.CLOSED;
         socket.onclose(new CloseEvent(code, reason, wasClean));
     }
 };
@@ -69,33 +77,3 @@ if (!window.WebSocket) {
     window.WebSocket = WebSocketShim;
 }
 
-function test() {
-    var url = "ws://echo.websocket.org";
-
-    log("connecting to " + url);
-
-    var timer;
-    var sock = new WebSocketShim(url);
-
-    function ping() {
-        sock.send("ping!");
-    }
-
-    sock.onopen = function(e) {
-        log("onopen -> " + e);
-        timer = window.setInterval(ping, 5 * 1000);
-    };
-
-    sock.onclose = function(e) {
-        log("onclose -> " + e);
-        if (timer)
-            window.clearInterval(timer);
-    };
-
-    sock.onmessage = function(e) {
-        log("onmessage -> " + e);
-    };
-
-}
-
-test();
