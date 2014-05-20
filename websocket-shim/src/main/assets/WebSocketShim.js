@@ -1,10 +1,10 @@
 
 
-var log = function() {
+function log() {
     if (window.console) {
-        console.log.call(console, arguments);
+        console.log.apply(console, arguments);
     }
-};
+}
 
 var MessageEvent = function(data) {
     this.data = data;
@@ -18,13 +18,12 @@ var CloseEvent = function(code, reason, wasClean) {
 
 var WebSocketShim = function(url) {
     this.URL = url;
-    this.socket = WebSocketInterface.newSocket();
+    log("connecting to " + url);
+    this.socket = WebSocketInterface.connect(url);
     this.readyState = WebSocketShim.CONNECTING;
     log("new socket -> " + this.socket);
     if (this.socket > -1) {
         WebSocketShim.sockets[this.socket] = this;
-        log("connecting to " + url);
-        WebSocketInterface.connect(this.socket, url);
     }
 };
 
@@ -56,10 +55,10 @@ WebSocketShim.onOpen = function(socket, uri) {
     }
 };
 
-WebSocketShim.onMessage = function(socket, data) {
+WebSocketShim.onMessage = function(socket, message) {
     var socket = WebSocketShim.getSocket(socket);
     if (socket && socket.onmessage) {
-        socket.onmessage(new MessageEvent(data));
+        socket.onmessage(new MessageEvent(message));
     }
 };
 
@@ -69,6 +68,10 @@ WebSocketShim.onClose = function(socket, code, reason, wasClean) {
         socket.readyState = WebSocketShim.CLOSED;
         socket.onclose(new CloseEvent(code, reason, wasClean));
     }
+};
+
+WebSocketShim.onError = function(socket, exception) {
+    log(JSON.stringify(arguments));
 };
 
 window.WebSocketShim = WebSocketShim;

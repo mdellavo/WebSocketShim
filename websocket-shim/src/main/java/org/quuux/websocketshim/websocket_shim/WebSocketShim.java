@@ -7,22 +7,23 @@ import android.webkit.JavascriptInterface;
 import android.webkit.ValueCallback;
 import android.webkit.WebView;
 
+import org.java_websocket.client.WebSocketClient;
+import org.java_websocket.handshake.ServerHandshake;
+
 import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.lang.ref.WeakReference;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
-
-import de.tavendo.autobahn.WebSocketConnection;
-import de.tavendo.autobahn.WebSocketException;
-import de.tavendo.autobahn.WebSocketHandler;
 
 public class WebSocketShim {
 
     private static final String TAG = "WebSocketShim";
 
-    private List<WebSocketConnection> mSockets = new ArrayList<WebSocketConnection>();
+    private List<WebSocketClient> mSockets = new ArrayList<WebSocketClient>();
     private WeakReference<WebView> mView;
 
     public WebSocketShim(final WebView view) {
@@ -68,63 +69,79 @@ public class WebSocketShim {
         Log.d(TAG, args.length > 0 ? String.format(fmt, args) : fmt);
     }
 
-    public WebSocketConnection getSocket(final int socket) {
+    public WebSocketClient getSocket(final int socket) {
         return mSockets.get(socket);
     }
 
-    private int getSocketIndex(final WebSocketConnection socket) {
+    private int getSocketIndex(final WebSocketClient socket) {
         return mSockets.indexOf(socket);
     }
 
-    public int newSocket() {
-        final WebSocketConnection sock = new WebSocketConnection();
-        mSockets.add(sock);
-        return getSocketIndex(sock);
-    }
-
     private void close(final int socket) {
-        final WebSocketConnection sock = mSockets.get(socket);
+        final WebSocketClient sock = mSockets.get(socket);
         if (sock != null) {
             log("close() @ %s", socket);
-            sock.disconnect();
+            sock.close();
         }
     }
 
     private void send(final int socket, final String data) {
-        final WebSocketConnection sock = mSockets.get(socket);
+        final WebSocketClient sock = mSockets.get(socket);
         if (sock != null) {
             log("send(data=%s) @ %s", data, socket);
-            sock.sendTextMessage(data);
+            sock.send(data);
         }
     }
 
-    private void connect(final int socket, final String uri) {
-        final WebSocketConnection sock = getSocket(socket);
-        final int socketIndex = getSocketIndex(sock);
+    private int connect(final String uri) {
 
+
+        final URI u;
         try {
-            sock.connect(uri, new WebSocketHandler() {
-                @Override
-                public void onOpen() {
-                    log("open(uri=%s) @ %s", uri, socketIndex);
-                    eval("WebSocketShim.onOpen(%s, \"%s\")", socketIndex, uri);
-                }
-
-                @Override
-                public void onTextMessage(final String data) {
-                    log("message(data=%s) @ %s", data, socketIndex);
-                    eval("WebSocketShim.onMessage(%s, \"%s\")", socketIndex, data);
-                }
-
-                @Override
-                public void onClose(final int code, final String reason) {
-                    log("close(code=%s, reason=%s) @ %s", code, reason, socketIndex);
-                    eval("WebSocketShim.onClose(%s, %s, \"%s\", %s)", socketIndex, code, reason, null);
-                }
-            });
-        } catch (WebSocketException e) {
-            logException("web socket exception @ %s", e, socketIndex);
+            u = new URI(uri);
+        } catch (URISyntaxException e) {
+            Log.e(TAG, "uri error", e);
+            return -1;
         }
+
+        final WebSocketClient sock = new WebSocketClient(u) {
+
+            private int getSocketIndex() {
+                return mSockets.indexOf(this);
+            }
+
+            @Override
+            public void onOpen(final ServerHandshake handshakedata) {
+                final int socketIndex = getSocketIndex();
+                log("open(uri=%s) @ %s", uri, socketIndex);
+                eval("WebSocketShim.onOpen(%s, \"%s\")", socketIndex, uri);
+            }
+
+            @Override
+            public void onMessage(final String message) {
+                final int socketIndex = getSocketIndex();
+                log("message(message=%s) @ %s", message, socketIndex);
+                eval("WebSocketShim.onMessage(%s, \"%s\")", socketIndex, message);
+            }
+
+            @Override
+            public void onClose(final int code, final String reason, final boolean remote) {
+                final int socketIndex = getSocketIndex();
+                log("close(code=%s, reason=%s, remote=%s) @ %s", code, reason, remote, socketIndex);
+                eval("WebSocketShim.onClose(%s, %s, \"%s\", %s)", socketIndex, code, reason, remote);
+            }
+
+            @Override
+            public void onError(final Exception ex) {
+                final int socketIndex = getSocketIndex();
+                logException("error(exception=%s) @ %s", ex, ex, socketIndex);
+                eval("WebSocketShim.onError(%s, \"%s\")", socketIndex, ex);
+            }
+        };
+        sock.connect();
+        mSockets.add(sock);
+
+        return sock != null ? mSockets.indexOf(sock) : -1;
     }
 
 
@@ -137,13 +154,8 @@ public class WebSocketShim {
         }
 
         @JavascriptInterface
-        public int newSocket() {
-            return mShim.newSocket();
-        }
-
-        @JavascriptInterface
-        public void connect(final int socket, final String uri) {
-            mShim.connect(socket, uri);
+        public int connect(final String uri) {
+            return mShim.connect(uri);
         }
 
         @JavascriptInterface

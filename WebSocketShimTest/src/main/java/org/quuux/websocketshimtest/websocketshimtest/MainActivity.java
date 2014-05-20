@@ -62,7 +62,7 @@ public class MainActivity extends Activity {
 
         @Override
         public boolean onConsoleMessage(final ConsoleMessage consoleMessage) {
-            Log.d(TAG, String.format("onConsoleMessage(consoleMessage=%s)", consoleMessage));
+            Log.d(TAG, String.format("onConsoleMessage(message=%s, line=%s)", consoleMessage.message(), consoleMessage.lineNumber()));
             return super.onConsoleMessage(consoleMessage);
         }
     }

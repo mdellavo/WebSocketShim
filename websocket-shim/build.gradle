@@ -16,13 +16,10 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.txt'
         }
     }
-    packagingOptions {
-        exclude 'META-INF/ASL2.0'
-    }
 }
 
 dependencies {
     compile fileTree(dir: 'libs', include: ['*.jar'])
-    compile 'com.android.support:appcompat-v7:19.+'
+    compile 'org.java-websocket:Java-WebSocket:1.3.+'
 
 }
